@@ -69,8 +69,6 @@ privilegeareas = {
 		if not privilegeareas.players[name].areas then
 			privilegeareas.players[name].areas = {}
 		end
-
-		privilegeareas.calculate_current_areas(player)
 	end,
 	
 	calculate_current_areas = function(player)
