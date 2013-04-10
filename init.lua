@@ -26,6 +26,26 @@ privilegeareas = {
 				}
 			},
 
+		},
+		
+		-- EXAMPLE HOTSPOT 2
+		-- If player enters this area (is less than 10 metres away from {0,100,0}):
+		-- 	>> "fly" is granted
+		-- If player leaves this area (is more than 10 metres away from {0,100,0}):
+		--	>> "fly" is taken away
+		{
+			type="radius",
+			location = {x=0,y=100,z=0,radius=10},
+			actions = {
+				on_enter = {
+					grant = {"fly"}
+				},
+				
+				on_leave = {
+					take = {"flay"}
+				}
+			},
+
 		}
 	},
 
