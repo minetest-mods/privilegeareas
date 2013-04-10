@@ -7,9 +7,11 @@ privilegeareas = {
 			type="radius",
 			location = {x=0,y=0,z=0,radius=10},
 			sets = {
-				privs = {shout},
-				grant_on_enter = true;
-				take_on_exit = true;
+				{
+					privs = {shout,fast},
+					on_enter = "grant";
+					on_leave = "take";
+				}
 			},
 
 		}
@@ -74,31 +76,31 @@ privilegeareas = {
 		local name = player:get_player_name()
 		privilegeareas.players[name].areas[i]=true
 		minetest.chat_send_player(name, "You have entered area "..i)
-		for a=1,# privilegeareas.areas[i].sets do
-			if privilegeareas.areas[i].sets[a].grant_on_enter == true then
-				local privs = minetest.get_player_privs(name)
-				minetest.chat_send_player(name, "You have been given: ")
 
+		local privs = minetest.get_player_privs(name)
+		for a=1,# privilegeareas.areas[i].sets do
+			if privilegeareas.areas[i].sets[a].on_enter == "grant" then
+				minetest.chat_send_player(name, "You have been given:")
 				for b=1,# privilegeareas.areas[i].sets[a].privs do
 					privs[privilegeareas.areas[i].sets[a].privs[b]]=true;
 					minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].sets[a].privs[b])
 				end
-				
-				minetest.set_player_privs(name, privs)
 			end
 		end
+		minetest.set_player_privs(name, privs)
 	end,
-	
+
 	leave_area = function(player,i)
 		local name = player:get_player_name()
 		privilegeareas.players[name].areas[i]=false
 		minetest.chat_send_player(name, "You have left area "..i)
 		for a=1,# privilegeareas.areas[i].sets do
-			if privilegeareas.areas[i].sets[a].grant_on_enter == true then
+			if privilegeareas.areas[i].sets[a].on_enter == "grant" then
 				local privs = minetest.get_player_privs(name)
-				minetest.chat_send_player(name, "You have been given: ")
+				minetest.chat_send_player(name, "The following privs have been taken from you:")
 				
 				for b=1,# privilegeareas.areas[i].sets[a].privs do
+					print("priv "..b)
 					privs[privilegeareas.areas[i].sets[a].privs[b]]=true;
 					minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].sets[a].privs[b])
 				end
@@ -136,9 +138,9 @@ minetest.register_globalstep(function(dtime)
 		timer=0
 		print("Updating")
 
-		for i=1,# privilegeareas.players do
-			print("player "..i)
-			privilegeareas.calculate_current_areas(privilegeareas.players[i].player)
+		for _, plr in pairs(privilegeareas.players) do
+			print("player")
+			privilegeareas.calculate_current_areas(plr.player)
 		end
 
 	end
