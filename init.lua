@@ -6,11 +6,15 @@ privilegeareas = {
 		{
 			type="radius",
 			location = {x=0,y=0,z=0,radius=10},
-			sets = {
-				{
-					privs = {shout,fast},
-					on_enter = "grant";
-					on_leave = "take";
+			actions = {
+				on_enter = {
+					grant = {"shout"},
+					take = {"fast"}
+				},
+				
+				on_leave = {
+					grant = {"fast"},
+					take = {"shout"}
 				}
 			},
 
@@ -76,17 +80,44 @@ privilegeareas = {
 		local name = player:get_player_name()
 		privilegeareas.players[name].areas[i]=true
 		minetest.chat_send_player(name, "You have entered area "..i)
-
+		
+		-- Get privs
 		local privs = minetest.get_player_privs(name)
-		for a=1,# privilegeareas.areas[i].sets do
-			if privilegeareas.areas[i].sets[a].on_enter == "grant" then
-				minetest.chat_send_player(name, "You have been given:")
-				for b=1,# privilegeareas.areas[i].sets[a].privs do
-					privs[privilegeareas.areas[i].sets[a].privs[b]]=true;
-					minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].sets[a].privs[b])
+		
+		if not privs then
+			print("player does not exist error!")
+		end
+
+		-- loop grants
+		local tmp = false
+		if privilegeareas.areas[i].actions.on_enter.grant then
+			for a=1,# privilegeareas.areas[i].actions.on_enter.grant do
+				if tmp == false then
+					tmp = true
+					minetest.chat_send_player(name, "You have been given the following privs:")
 				end
+	
+				privs[privilegeareas.areas[i].actions.on_enter.grant[a]]=true;
+				minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].actions.on_enter.grant[a])
 			end
 		end
+
+		-- Loop though takes
+		tmp = false
+		if privilegeareas.areas[i].actions.on_enter.take then
+			
+			for a=1,# privilegeareas.areas[i].actions.on_enter.take do
+				if tmp == false then
+					tmp = true
+					minetest.chat_send_player(name, "You have lost the following privs:")
+				end
+	
+				privs[privilegeareas.areas[i].actions.on_enter.take[a]]=false;
+				minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].actions.on_enter.take[a])
+			end
+		end
+
+		-- Set privs
 		minetest.set_player_privs(name, privs)
 	end,
 
@@ -94,20 +125,45 @@ privilegeareas = {
 		local name = player:get_player_name()
 		privilegeareas.players[name].areas[i]=false
 		minetest.chat_send_player(name, "You have left area "..i)
-		for a=1,# privilegeareas.areas[i].sets do
-			if privilegeareas.areas[i].sets[a].on_enter == "grant" then
-				local privs = minetest.get_player_privs(name)
-				minetest.chat_send_player(name, "The following privs have been taken from you:")
-				
-				for b=1,# privilegeareas.areas[i].sets[a].privs do
-					print("priv "..b)
-					privs[privilegeareas.areas[i].sets[a].privs[b]]=true;
-					minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].sets[a].privs[b])
+		
+		-- Get privs
+		local privs = minetest.get_player_privs(name)
+		
+		if not privs then
+			print("player does not exist error!")
+		end
+
+		-- loop grants
+		local tmp = false
+		if privilegeareas.areas[i].actions.on_leave.grant then
+			for a=1,# privilegeareas.areas[i].actions.on_leave.grant do
+				if tmp == false then
+					tmp = true
+					minetest.chat_send_player(name, "You have been given the following privs:")
 				end
-				
-				minetest.set_player_privs(name, privs)
+	
+				privs[privilegeareas.areas[i].actions.on_leave.grant[a]]=true;
+				minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].actions.on_leave.grant[a])
 			end
 		end
+
+		-- Loop though takes
+		tmp = false
+		if privilegeareas.areas[i].actions.on_leave.take then
+			
+			for a=1,# privilegeareas.areas[i].actions.on_leave.take do
+				if tmp == false then
+					tmp = true
+					minetest.chat_send_player(name, "You have lost the following privs:")
+				end
+	
+				privs[privilegeareas.areas[i].actions.on_leave.take[a]]=false;
+				minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].actions.on_leave.take[a])
+			end
+		end
+
+		-- Set privs
+		minetest.set_player_privs(name, privs)
 	end
 }
 
@@ -134,7 +190,7 @@ local timer = 0
 
 minetest.register_globalstep(function(dtime)
 	timer = timer + dtime;
-	if timer >= 10 then
+	if timer >= 1 then
 		timer=0
 		print("Updating")
 
