@@ -3,6 +3,14 @@ privilegeareas = {
 	players = {},
 
 	areas = {
+	
+		-- EXAMPLE HOTSPOT
+		-- If player enters this area (is less than 10 metres away from {0,0,0}):
+		-- 	>> "shout" is granted
+		--	>> "fast" is taken away
+		-- If player leaves this area (is more than 10 metres away from {0,0,0}):
+		-- 	>> "fast" is granted
+		--	>> "shout" is taken away
 		{
 			type="radius",
 			location = {x=0,y=0,z=0,radius=10},
