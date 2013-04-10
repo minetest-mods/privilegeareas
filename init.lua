@@ -1,6 +1,7 @@
 privilegeareas = {
 
-	players = {},
+	players = nil,
+	userdata = {},
 
 	areas = {
 	
@@ -27,15 +28,17 @@ privilegeareas = {
 			},
 
 		},
-		
+
 		-- EXAMPLE HOTSPOT 2
-		-- If player enters this area (is less than 10 metres away from {0,100,0}):
+		-- If player enters this area ({-30000,100,-30000} to {30000,30000,30000}):
 		-- 	>> "fly" is granted
-		-- If player leaves this area (is more than 10 metres away from {0,100,0}):
+		-- If player leaves this area ({-30000,100,-30000} to {30000,30000,30000}):
 		--	>> "fly" is taken away
+		-- note: all of location2's values must be bigger than location's values
 		{
-			type="radius",
-			location = {x=0,y=100,z=0,radius=10},
+			type="box",
+			location = {x=-30000,y=100,z=-30000},
+			location2 = {x=30000,y=30000,z=30000},
 			actions = {
 				on_enter = {
 					grant = {"fly"}
@@ -50,21 +53,25 @@ privilegeareas = {
 	},
 
 	createPlayerTable = function(player)
+		if not privilegeareas.players then
+			load_data()
+		end
+
 		if not player or not player:get_player_name() then
-			print("Player does not exist!")
+			print("[PrivilegeAreas] Player does not exist!")
 			return;
 		end
 
 		local name = player:get_player_name()
 
-		print("writing player table for "..name)
-		
+		print("[PrivilegeAreas] writing player table for "..name)
+
 		if (name=="") then
 			return;
 		end
 		
 		privilegeareas.players[name] = {}
-		privilegeareas.players[name].player = player
+		privilegeareas.userdata[name] = player
 
 		if not privilegeareas.players[name].areas then
 			privilegeareas.players[name].areas = {}
@@ -73,7 +80,7 @@ privilegeareas = {
 	
 	calculate_current_areas = function(player)
 		local name = player:get_player_name()
-		print("calculating current areas for "..name)
+		print("[PrivilegeAreas] calculating current areas for "..name)
 
 		if (name=="") then
 			return;
@@ -86,15 +93,23 @@ privilegeareas = {
 		for i=1,# privilegeareas.areas do
 			if privilegeareas.areas[i].type == "radius" then
 				if distance(player:getpos(),privilegeareas.areas[i].location) < privilegeareas.areas[i].location.radius then
-					print ("is in area "..i)
 					if  (not privilegeareas.players[name].areas or not privilegeareas.players[name].areas[i] or privilegeareas.players[name].areas[i]==false) then
-						print ("running function enter area")
 						privilegeareas.enter_area(player,i)
 					end
 				else
-					print ("is not in area "..i)
 					if  (privilegeareas.players[name].areas[i]==true) then
-						print ("running function leave area")
+						privilegeareas.leave_area(player,i)
+					end
+				end
+			elseif privilegeareas.areas[i].type == "box" then
+				if (vector_is_in(privilegeareas.areas[i].location,privilegeareas.areas[i].location2,player:getpos())) then
+					print("is in box")
+					if  (not privilegeareas.players[name].areas or not privilegeareas.players[name].areas[i] or privilegeareas.players[name].areas[i]==false) then
+						privilegeareas.enter_area(player,i)
+					end
+				else
+					print("is not in box")
+					if  (privilegeareas.players[name].areas[i]==true) then
 						privilegeareas.leave_area(player,i)
 					end
 				end
@@ -111,15 +126,15 @@ privilegeareas = {
 		local privs = minetest.get_player_privs(name)
 		
 		if not privs then
-			print("player does not exist error!")
+			print("[PrivilegeAreas] player does not exist error!")
 		end
 
 		-- loop grants
-		local tmp = false
+		local tmpv = false
 		if privilegeareas.areas[i].actions.on_enter.grant then
 			for a=1,# privilegeareas.areas[i].actions.on_enter.grant do
-				if tmp == false then
-					tmp = true
+				if tmpv == false then
+					tmpv = true
 					minetest.chat_send_player(name, "You have been given the following privs:")
 				end
 	
@@ -129,12 +144,12 @@ privilegeareas = {
 		end
 
 		-- Loop though takes
-		tmp = false
+		tmpv = false
 		if privilegeareas.areas[i].actions.on_enter.take then
 			
 			for a=1,# privilegeareas.areas[i].actions.on_enter.take do
-				if tmp == false then
-					tmp = true
+				if tmpv == false then
+					tmpv = true
 					minetest.chat_send_player(name, "You have lost the following privs:")
 				end
 	
@@ -145,6 +160,9 @@ privilegeareas = {
 
 		-- Set privs
 		minetest.set_player_privs(name, privs)
+		
+		-- save data
+		save_data()
 	end,
 
 	leave_area = function(player,i)
@@ -156,7 +174,7 @@ privilegeareas = {
 		local privs = minetest.get_player_privs(name)
 		
 		if not privs then
-			print("player does not exist error!")
+			print("[PrivilegeAreas] player does not exist error!")
 		end
 
 		-- loop grants
@@ -190,13 +208,52 @@ privilegeareas = {
 
 		-- Set privs
 		minetest.set_player_privs(name, privs)
+		
+		-- save data
+		save_data()
 	end
 }
 
-function vector_is_in(hay,needle)
-	if (needle.x > hay.x and needle.x < hay.x+hay.w) then
-		if (needle.y > hay.y and needle.y < hay.y+hay.h) then
-			if (needle.z > hay.z and needle.z < hay.z+hay.d) then
+-- Table Save Load Functions
+function save_data()
+	if privilegeareas.players == nil then
+		return
+	end
+
+	local file = io.open(minetest.get_worldpath().."/privareas.txt", "w")
+	if file then
+		file:write(minetest.serialize(privilegeareas.players))
+		file:close()
+	end
+end
+
+function load_data()
+	if privilegeareas.players == nil then
+		print("[PrivilegeAreas] Loading data")
+	
+		local file = io.open(minetest.get_worldpath().."/privareas.txt", "r")
+		if file then
+			local table = minetest.deserialize(file:read("*all"))
+			if type(table) == "table" then
+				privilegeareas.players = table
+				return
+			end
+		end
+	end
+	privilegeareas.players = {}
+end
+
+load_data()
+
+minetest.register_on_shutdown(function()
+	-- save data
+	save_data()
+end)
+
+function vector_is_in(hay,box,needle)
+	if (needle.x > hay.x and needle.x < box.x) then
+		if (needle.y > hay.y and needle.y < box.y) then
+			if (needle.z > hay.z and needle.z <box.z) then
 				return true
 			end
 		end
@@ -218,11 +275,10 @@ minetest.register_globalstep(function(dtime)
 	timer = timer + dtime;
 	if timer >= 1 then
 		timer=0
-		print("Updating")
+		print("[PrivilegeAreas] Updating")
 
-		for _, plr in pairs(privilegeareas.players) do
-			print("player")
-			privilegeareas.calculate_current_areas(plr.player)
+		for _, plr in pairs(privilegeareas.userdata) do
+			privilegeareas.calculate_current_areas(plr)
 		end
 
 	end
@@ -231,3 +287,8 @@ end)
 minetest.register_on_joinplayer(function(player)
 	privilegeareas.createPlayerTable(player)
 end)
+
+minetest.register_on_leaveplayer(function(player)
+	privilegeareas.userdata[player:get_player_name()]=nil
+end)
+
