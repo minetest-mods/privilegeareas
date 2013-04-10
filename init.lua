@@ -42,7 +42,7 @@ privilegeareas = {
 				},
 				
 				on_leave = {
-					take = {"flay"}
+					take = {"fly"}
 				}
 			},
 
