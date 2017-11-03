@@ -156,13 +156,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 		if (gui[name].id and gui[name].trigger and fields.name) then
 			-- this will doubtlessly be buggy
-			table.insert(privilegeareas.areas[gui[name].id].actions[gui[name].trigger][gui[name].type],fields.name)
+			local id = gui[name].id
+			local trigger = gui[name].trigger
+			local action_type = gui[name].type
+			local trigger_action_types = privilegeareas.areas[id].actions[trigger]
+			if not trigger_action_types[action_type] then
+				trigger_action_types[action_type] = {}
+			end
+			table.insert(trigger_action_types[action_type],fields.name)
 
 			-- Alert user of success
 			minetest.chat_send_player(name, "Added data '"..fields.name.."' to '"..gui[name].type.."' in trigger "..gui[name].trigger.." in area "..gui[name].id)
 			
 			-- Delete field
-			local id = gui[name].id
 			gui[name] = nil
 
 			-- Update
