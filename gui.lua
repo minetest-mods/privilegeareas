@@ -4,6 +4,9 @@ gui = {}
 minetest.register_chatcommand("privareas", {
 	params = "",
 	description = "PrivAreas: access a formspec from the privilegeareas mod",
+	privs = {
+		privs = true,
+	},
 	func = function(name, param)
 		add_gui(name)
 	end,
