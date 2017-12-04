@@ -36,6 +36,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if (formname~="privilegeareas:gui_add") then
 		return false
 	end
+		
+	if not minetest.check_player_privs(player, "privs") then
+		return false
+	end
 
 	if fields.submit then
 		-- Do addition stuff
