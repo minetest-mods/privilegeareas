@@ -108,7 +108,7 @@ privilegeareas = {
 					print("[PrivilegeAreas] "..name.." has lost the following privs:")
 				end
 	
-				privs[privilegeareas.areas[i].actions.on_enter.take[a]]=false;
+				privs[privilegeareas.areas[i].actions.on_enter.take[a]]=nil;
 				minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].actions.on_enter.take[a])
 				print("[PrivilegeAreas] -- "..privilegeareas.areas[i].actions.on_enter.take[a])
 			end
@@ -161,7 +161,7 @@ privilegeareas = {
 					print("[PrivilegeAreas] "..name.." has lost the following privs:")
 				end
 	
-				privs[privilegeareas.areas[i].actions.on_leave.take[a]]=false;
+				privs[privilegeareas.areas[i].actions.on_leave.take[a]]=nil;
 				minetest.chat_send_player(name, "-- "..privilegeareas.areas[i].actions.on_leave.take[a])
 				print("[PrivilegeAreas] -- "..privilegeareas.areas[i].actions.on_leave.take[a])
 			end
